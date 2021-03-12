@@ -1,0 +1,30 @@
+{
+  "name": "tree-shake-css",
+  "version": "1.0.0",
+  "description": "Transform your large files into a tree-shakeable form",
+  "main": "index.js",
+  "bin": {
+    "svelte-types-writer": "runnpx.js"
+  },
+  "scripts": {
+    "init-tailwind-test": "npx tailwindcss-cli@latest build -c ./test/tailwind/tailwind.config.js -o ./test/tailwind/tailwind.css",
+    "whitelist-tailwind-test": "NODE_ENV=production npx tailwindcss-cli@latest build -o ./test/tailwind/tailwind-whitelist.css -c ./test/tailwind/tailwind.config.js",
+    "start": "node index.js ./test/tailwind/tailwind.css -o test/tailwind/css --debug"
+  },
+  "keywords": [
+    "tree-shaking",
+    "tree-shake",
+    "rollup",
+    "webpack",
+    "svelte",
+    "sveltejs"
+  ],
+  "author": "micha-lmxt <micha-lmxt@gradientdescent.de> (https://gradientdescent.de)",
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {
+    "css": "^3.0.0",
+    "fs-extra": "^9.1.0",
+    "path": "^0.12.7"
+  }
+}
