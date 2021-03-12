@@ -91,7 +91,7 @@ const processRules = (rules, generalComment, general, comment, classes, media, m
                         if (classes[c] === undefined) {
                             classes[c] = { rule: ruleToString(sel, r.declarations, media, mediaend), comment: commentToString(comment, sel, r.declarations, media, mediaend) };
                         } else {
-                            classes[c].rule += "\n" + ruleToString(sel, r.declarations, media, mediaend);
+                            classes[c].rule += ruleToString(sel, r.declarations, media, mediaend);
                             classes[c].comment += "\n" + commentToString(comment, sel, r.declarations, media, mediaend);
                         }
 
@@ -183,21 +183,16 @@ const writeSpecific = (classes, dest, jsify) => {
             fs.mkdirSync(folder);
         }
         fs.writeFileSync(path.join(folder, "css.svelte"),
-            `<style>
-        ${classes[cl].rule}
-        
-    </style>`, enc)
-        fs.writeFileSync(path.join(folder, "index.js"), `import {default as Basic} from './css.svelte';
-        /**
-         * ${cl.replace(/\\/g,"")}
-         * 
-         * @type {string}
-         * 
-         * ${classes[cl].comment}
-         * */
-        export const ${jl} = false ? Basic : "${cl.replace(/\\/g,"")}";
-        `, enc);
-        
+            `<style>${classes[cl].rule}</style>`, enc)
+        fs.writeFileSync(path.join(folder, "index.js"), `import {default as A} from './css.svelte';
+/**
+* ${cl.replace(/\\/g,"")}
+* 
+* @type {string}
+* 
+* ${classes[cl].comment}
+* */
+export const ${jl} = false ? A : "${cl.replace(/\\/g,"")}";`, enc);        
     })
 
 }
