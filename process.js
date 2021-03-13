@@ -8,8 +8,8 @@ exports.processCss = void 0;
 exports.processCss = (files = [], outfolder = "~none~", debug = false, override = true) => {
     let dest = outfolder;
     if (outfolder === "~none~") {
-        fs.mkdirSync("css");
-        dest = "./css";
+        fs.mkdirSync("my-css");
+        dest = "./my-css";
     }
     if (!fs.existsSync(dest)) {
         fs.mkdir(dest)
@@ -43,19 +43,21 @@ const extractCssFile = (loc, dest, debug) => {
 
     [generalComment, general, comment, classes] = processRules(rules, generalComment, general, comment, classes, "", "")
 
-    writeGeneral(general, generalComment, dest);
+    writeGeneral(general,  dest);
 
     // Todo: make exchange symbols customizable
     const jsify = (s) => {
         return s.replace(/\\3/g,"_")
             .replace(/-/g, "_")
             .replace(/\./g, "_")
-            .replace(/\:/g, "")
+            .replace(/\:/g, "_")
             .replace(/\//g, "_")
             .replace(/\\/g, "")
     }
 
     writeSpecific(classes, dest, jsify);
+
+    writeModule(dest,generalComment,classes,jsify);
 }
 
 const ruleToString = (sel, declar, media, mediaend) => {
@@ -146,27 +148,20 @@ const keyframeToString = (r, media, mediaend) => {
 const selConnects = /(?<!\\)[ <>~+:]/g;
 
 /** Write the general css to the dest folder */
-const writeGeneral = (general, generalComment, dest) => {
+const writeGeneral = (general, dest) => {
     const enc = { encoding: "utf-8" };
     fs.writeFileSync(path.join(dest, "Basic.svelte"),
         `<style>
     ${general}
 
 </style>`, enc)
-    fs.writeFileSync(path.join(dest, "index.js"), `export {default as Basic} from './Basic.svelte';`, enc);
-    fs.writeFileSync(path.join(dest, "index.d.ts"), `
-    import SvelteComponentTyped from 'svelte';
-    /**
-     ${generalComment}
-    */
-    declare class Basic extends SvelteComponentTyped<{},{},{}> {}
-    export {Basic}
-    `, enc);
+    fs.writeFileSync(path.join(dest, "basic.js"), `export {default as Basic} from './Basic.svelte';`, enc);
+
     fs.writeFileSync(path.join(dest,"c.js"),`
     /** combine class strings
      * @type {(...args:string[])=>string}
      * */
-    const c = (...args) => args.join(" ");
+    export const c = (...args) => args.join(" ");
     `,enc)
 }
 
@@ -195,6 +190,51 @@ const writeSpecific = (classes, dest, jsify) => {
 export const ${jl} = false ? A : "${cl.replace(/\\/g,"")}";`, enc);        
     })
 
+}
+
+const writeModule = (dest,generalComment,classes,jsify)=>{
+    const enc = { encoding: "utf-8" };
+    const name = path.basename(dest)
+    fs.writeFileSync(path.join(dest,"package.json"),`
+    {
+        "name": "${name}",
+        "version": "1.0.0",
+        "description": "Project specific css-svelte files",
+        "types": "types.d.ts",
+        "author": "tree-shake-css <tree-shake-css@gradientdescent.de>",
+        "devDependencies": {
+            "svelte": "^3.34.0"
+        },
+      }
+    `)
+    fs.writeFileSync(path.join(dest, "types.d.ts"), `
+    import SvelteComponentTyped from 'svelte';
+    /**
+     ${generalComment}
+    */
+    declare module "${name}/basic"{
+        declare class Basic extends SvelteComponentTyped<{},{},{}> {}
+        export {Basic}
+    }
+    declare module "${name}/c"{
+        /** combine class strings
+        * usage:
+        *   <div class={c("class1","class2")}
+        * */
+        declare const c = (...args : string[]) => string;
+    }
+    ` + Object.keys(classes).map(cl=>{
+         const jl = jsify(cl);;
+     return `declare module "${name + "/" + cl.replace(/\\/g,"")}" {
+        /**  ${cl.replace(/\\/g,"")}
+         * 
+         * ${classes[cl].comment}
+         * */
+        declare const ${jl} : string;
+        export {${jl}};
+    }`
+
+    }).join("\n"), enc);
 }
 
 

@@ -12,8 +12,9 @@ if (args.length === 0) {
         where
          - files1, files2... are filenames or globs (eg. ./src/**/*.svelte) for that declaration files should be generated
          - options: 
-            --out <folder> or -o <folder>: Set an output folder for the type declarations.
-            --override: if existing types and js files should be overridden.
+            --out <folder> or -o <folder>: Set an output folder for the css file project. Default "my-css".
+            --override: if existing files should be overridden.
+            --module <name> or -m <name>: How the generated module should be called.  Use "none" to disable module mode 
             --debug: for debugging only.
             
     `)
@@ -24,6 +25,7 @@ if (args.length === 0) {
     let outfolder = "~none~";
     let debug = false;
     let override = false;
+
     for (let v of args) {
 
         if (v === "--debug") {
@@ -40,6 +42,7 @@ if (args.length === 0) {
             outfolder = "will get";
             continue;
         }
+
         if (outfolder === "will get") {
             outfolder = v;
             continue;
@@ -57,6 +60,7 @@ if (args.length === 0) {
     if (outfolder === "will get") {
         outfolder = "~none~";
     }
-    processFiles(files,  outfolder, debug, override);
+
+    processFiles(files,  outfolder, module===true || module===false ? "my-css" : module,  debug, override);
 
 }
