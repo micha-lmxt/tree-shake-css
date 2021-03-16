@@ -12,10 +12,12 @@ if (args.length === 0) {
         where
          - files1, files2... are filenames or globs (eg. ./src/**/*.svelte) for that declaration files should be generated
          - options: 
-            --out <folder> or -o <folder>: Set an output folder for the css file project. Default "my-css".
+            --out <folder> or -o <folder>: Set an output folder for the css file project. Default "css".
+            --sourceout <folder> or -so <folder>: Set an extra folder for the source .svelte files. Default "css/source"
             --override: if existing files should be overridden.
-            --module <name> or -m <name>: How the generated module should be called.  Use "none" to disable module mode 
             --debug: for debugging only.
+            --module: if it should be exported as module
+            --noclass <name>: how the js object should be named which captures the css code which is not structured into classes. Default: "basic"
             
     `)
 } else {
@@ -23,11 +25,16 @@ if (args.length === 0) {
     const baselines = [];
     let baseline = false;
     let outfolder = "~none~";
+    let sourceout = "~none~";
     let debug = false;
     let override = false;
+    let module = false;
+    let noclass = "basic";
 
-    for (let v of args) {
-
+    
+    
+    for (let i=0;i<args.length;i++) {
+        const v = args[i];
         if (v === "--debug") {
             debug = true;
             continue;
@@ -37,30 +44,34 @@ if (args.length === 0) {
             continue;
         }
 
-
         if (v === "--out" || v === "-o") {
-            outfolder = "will get";
+            outfolder = args[++i];
             continue;
         }
-
-        if (outfolder === "will get") {
-            outfolder = v;
+        
+        if (v === "--sourceout" || v === "-so") {
+            sourceout = args[++i];
             continue;
+        }
+        if (v === "--noclass"){
+            noclass = args[++i];
         }
         if (v === "--override") {
             override = true;
+            continue;
+        }
+        if (v=== "--module"){
+            module=true;
+            continue;
         }
         if (baseline) {
             baselines.push(v);
         } else {
             files.push(v);
         }
+
     }
 
-    if (outfolder === "will get") {
-        outfolder = "~none~";
-    }
-
-    processFiles(files,  outfolder, module===true || module===false ? "my-css" : module,  debug, override);
+    processFiles(files,  outfolder,sourceout,noclass,module,  debug, override);
 
 }

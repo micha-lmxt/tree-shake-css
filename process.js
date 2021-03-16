@@ -5,45 +5,34 @@ var path = require("path")
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.processCss = void 0;
 
-exports.processCss = (files = [], outfolder = "~none~", debug = false, override = true) => {
+exports.processCss = (files = [], outfolder = "~none~",sourceout = "~none~",noclass="basic",module=false, debug = false, override = true) => {
     let dest = outfolder;
     if (outfolder === "~none~") {
-        fs.mkdirSync("my-css");
-        dest = "./my-css";
+        dest = "./css";
+    }
+    let destsource = sourceout;
+    if (sourceout === "~none~"){
+        destsource = "./css/source";
     }
     if (!fs.existsSync(dest)) {
-        fs.mkdir(dest)
+        fs.mkdir(dest,{recursive:true});
     }
-    for (let i = 0; i < files.length; i++) {
-        extractCssFile(files[i], dest, debug);
-    }
-}
-
-const extractCssFile = (loc, dest, debug) => {
-
-    const cssfile = fs.readFileSync(loc, { encoding: "utf-8" })
-
-    var obj = css.parse(cssfile);
-    if (!obj || !obj.stylesheet) {
-        throw ("Parsing of file " + loc + " failed!")
-    }
-    const rules = obj.stylesheet.rules;
-    if (debug) {
-        console.log("parsed " + rules.length + " rules from file " + loc);
+    if (!fs.existsSync(destsource)){
+        fs.mkdirSync(destsource,{recursive:true});
     }
 
-
-    // general styles means that not a class is generated.
     let generalComment = "";
     let general = "";
-
 
     let comment = "";
     let classes = {};
 
-    [generalComment, general, comment, classes] = processRules(rules, generalComment, general, comment, classes, "", "")
+    for (let i = 0; i < files.length; i++) {
+        [generalComment, general, comment, classes] = extractCssFile(files[i], debug,  generalComment, general, comment, classes);
+    }
 
-    writeGeneral(general,  dest);
+
+    writeGeneral(general,  dest, destsource,noclass);
 
     // Todo: make exchange symbols customizable
     const jsify = (s) => {
@@ -55,11 +44,38 @@ const extractCssFile = (loc, dest, debug) => {
             .replace(/\\/g, "")
     }
 
-    writeSpecific(classes, dest, jsify);
+    writeSpecific(classes, dest,destsource, jsify,module);
 
-    writeModule(dest,generalComment,classes,jsify);
+    if (module){
+        writeModule(dest,generalComment,classes,jsify);
+    }else{
+        //writeAll(dest,classes,jsify);
+    }
 }
 
+const extractCssFile = (loc,debug,  generalComment, general, comment, classes) => {
+
+    const cssfile = fs.readFileSync(loc, { encoding: "utf-8" })
+
+    var obj = css.parse(cssfile);
+    if (!obj || !obj.stylesheet) {
+        throw ("Parsing of file " + loc + " failed!")
+    }
+    const rules = obj.stylesheet.rules;
+    if (debug) {
+        console.log("parsed " + rules.length + " rules from file " + loc);
+    }
+    // general styles means that not a class is generated.
+
+    return processRules(rules, generalComment, general, comment, classes, "", "")
+    
+    
+}
+
+const rawify = (s)=>{
+    return s.replace(/\\3/g,"")
+        .replace(/\\/g,"")
+}
 const ruleToString = (sel, declar, media, mediaend) => {
     return media + ":global(" + sel + ")" +
         css.stringify({ stylesheet: { rules: [{ type: "rule", selectors: ["x"], declarations: declar }] } }).slice(2) + mediaend;
@@ -69,6 +85,7 @@ const commentToString = (comment, sel, dec, media, mediaend) => {
 }
 
 const processRules = (rules, generalComment, general, comment, classes, media, mediaend) => {
+
     for (let i = 0; i < rules.length; i++) {
         const r = rules[i];
         if (r.type === "comment") {
@@ -147,49 +164,75 @@ const keyframeToString = (r, media, mediaend) => {
 
 const selConnects = /(?<!\\)[ <>~+:]/g;
 
+
+
 /** Write the general css to the dest folder */
-const writeGeneral = (general, dest) => {
+const writeGeneral = (general, dest, destsource,basic) => {
+
     const enc = { encoding: "utf-8" };
-    fs.writeFileSync(path.join(dest, "Basic.svelte"),
+    const toSource = path.relative(dest,destsource);
+
+    fs.writeFileSync(path.join(destsource, basic.toUpperCase() + ".svelte"),
         `<style>
     ${general}
 
 </style>`, enc)
-    fs.writeFileSync(path.join(dest, "basic.js"), `export {default as Basic} from './Basic.svelte';`, enc);
+    fs.writeFileSync(path.join(dest, basic + ".js"), 
+        `export {default as ${
+            basic.split("").map((v,i)=>i===0?v.toUpperCase():v).join("")
+        }} from '${path.join(toSource,basic.toUpperCase() + ".svelte")}';`
+        , enc
+    );
 
     fs.writeFileSync(path.join(dest,"c.js"),`
     /** combine class strings
      * @type {(...args:string[])=>string}
      * */
     export const c = (...args) => args.join(" ");
-    `,enc)
+    `,enc
+    )
 }
 
-/** Write the specific css files to the dest folder */
-const writeSpecific = (classes, dest, jsify) => {
-    const enc = { encoding: "utf-8" };
 
+
+/** Write the specific css files to the dest folder */
+const writeSpecific = (classes, dest,destsource, jsify,module) => {
+
+    const enc = { encoding: "utf-8" };
+    const toSource = path.relative(dest,destsource);
     Object.keys(classes).forEach(cl => {
 
         const jl = jsify(cl);
-        const pathcl = cl.replace(/\//g, "-").replace(/\\/g, "");
-        const folder = path.join(dest, pathcl);
-        if (!fs.existsSync(folder)) {
-            fs.mkdirSync(folder);
-        }
-        fs.writeFileSync(path.join(folder, "css.svelte"),
+        const ccl = rawify(cl);
+        const file = ccl.replace(/\//g, "-");
+        
+        
+        fs.writeFileSync(path.join(destsource, file + ".svelte"),
             `<style>${classes[cl].rule}</style>`, enc)
-        fs.writeFileSync(path.join(folder, "index.js"), `import {default as A} from './css.svelte';
-/**
-* ${cl.replace(/\\/g,"")}
+        fs.writeFileSync(path.join(dest, file +".js"), 
+            `import {default as A} from './${path.join(toSource,file+'.svelte')}'` + (!module?`
+/** 
+* ${ccl}
 * 
 * @type {string}
 * 
 * ${classes[cl].comment}
 * */
-export const ${jl} = false ? A : "${cl.replace(/\\/g,"")}";`, enc);        
-    })
+export const ${jl} = false ? A : "${ccl}";`:""), enc);   
 
+        if (module){
+            fs.writeFileSync(path.join(folder,"index.d.ts"),
+            `/** 
+* ${ccl}
+* 
+* ${classes[cl].comment}
+* */
+        declare const ${jl} : string;
+        export {${jl}};
+        `,enc
+            );
+        }
+    })
 }
 
 const writeModule = (dest,generalComment,classes,jsify)=>{
@@ -204,7 +247,7 @@ const writeModule = (dest,generalComment,classes,jsify)=>{
         "author": "tree-shake-css <tree-shake-css@gradientdescent.de>",
         "devDependencies": {
             "svelte": "^3.34.0"
-        },
+        }
       }
     `)
     fs.writeFileSync(path.join(dest, "types.d.ts"), `
@@ -223,18 +266,33 @@ const writeModule = (dest,generalComment,classes,jsify)=>{
         * */
         declare const c = (...args : string[]) => string;
     }
-    ` + Object.keys(classes).map(cl=>{
-         const jl = jsify(cl);;
-     return `declare module "${name + "/" + cl.replace(/\\/g,"")}" {
-        /**  ${cl.replace(/\\/g,"")}
+    `/* + Object.keys(classes).map(cl=>{
+         const jl = jsify(cl);
+         const cll = rawify(cl);
+     return `declare module "${name + "/" + cll}" {
+        /**  ${cll}
          * 
          * ${classes[cl].comment}
-         * */
+         * *//*
         declare const ${jl} : string;
         export {${jl}};
     }`
 
-    }).join("\n"), enc);
+    }).join("\n")*/, enc);
 }
 
 
+const writeAll = (dest,classes,jsify)=>{
+    const enc = { encoding: "utf-8" };
+    const name = path.basename(dest);
+    const collect = []
+    fs.writeFileSync(path.join(dest, "index.js"), 
+        Object.keys(classes).map(cl=>{
+            const jl = jsify(cl);
+            const cll = rawify(cl);
+            collect.push(jl);
+            return `import {${jl}} from './${cll}';`
+        }).join("\n") + 
+        "\n" +
+        "export const all = " + collect.join(" + \n") + ';',enc);
+}

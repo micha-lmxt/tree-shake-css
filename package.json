@@ -4,7 +4,7 @@
   "description": "Transform your large files into a tree-shakeable form",
   "main": "index.js",
   "bin": {
-    "svelte-types-writer": "runnpx.js"
+    "tree-shake-css": "runnpx.js"
   },
   "scripts": {
     "init-tailwind-test": "npx tailwindcss-cli@latest build -c ./test/tailwind/tailwind.config.js -o ./test/tailwind/tailwind.css",
