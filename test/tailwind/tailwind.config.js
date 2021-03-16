@@ -1,6 +1,3 @@
-
-
-let y = xxx;
 module.exports = {
   purge: [
   ],

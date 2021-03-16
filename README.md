@@ -24,6 +24,8 @@ npx tree-shake-css ./my-large-css-file.css --out ./src/css --sourceout ./css-sou
 
 The folders are separated, so you can easily adjust your `tsconfig.json` file to exclude the svelte source files to improve IDE performance.
 
+It might make sense to copy this code into the scripts section of your `package.json`. You could consider adding the generated folders to `.gitignore`, so it would save some space and download time. Teammates can use the script to generate the files.
+
 ### Syntax
 
 Inside your source files you can use the classes then like this:
@@ -69,4 +71,8 @@ Each css class is put into a single js file. If your css file contains css code,
 ...
 ```
 
+## More information
 
+I'll write some more information on my blog page [https://gradientdescent.de/tree-shake-css](https://gradientdescent.de/tree-shake-css).
+
+I'm happy for contributions and improvement ideas!
