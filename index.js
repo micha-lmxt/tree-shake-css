@@ -10,7 +10,7 @@ if (args.length === 0) {
         Usage: tree-shake-css [options] files1 [files2...]
 
         where
-         - files1, files2... are filenames or globs (eg. ./src/**/*.svelte) for that declaration files should be generated
+         - files1, files2... are filenames or globs (eg. ./src/**/*.svelte) for which declaration files should be generated
          - options: 
             --out <folder> or -o <folder>: Set an output folder for the css file project. Default "css".
             --sourceout <folder> or -so <folder>: Set an extra folder for the source .svelte files. Default "css/source"

@@ -74,6 +74,7 @@ const extractCssFile = (loc,debug,  generalComment, general, comment, classes) =
 
 const rawify = (s)=>{
     return s.replace(/\\3/g,"")
+        .replace(/(?<!\\)\./g," ")
         .replace(/\\/g,"")
 }
 const ruleToString = (sel, declar, media, mediaend) => {
@@ -206,6 +207,8 @@ const writeSpecific = (classes, dest,destsource, jsify,module) => {
         const ccl = rawify(cl);
         const file = ccl.replace(/\//g, "-");
         
+
+        
         
         fs.writeFileSync(path.join(destsource, file + ".svelte"),
             `<style>${classes[cl].rule}</style>`, enc)
@@ -218,7 +221,7 @@ const writeSpecific = (classes, dest,destsource, jsify,module) => {
 * 
 * ${classes[cl].comment}
 * */
-export const ${jl} = false ? A : "${ccl}";`:""), enc);   
+export const ${jl} = false ? A : "${cclstr}";`:""), enc);   
 
         if (module){
             fs.writeFileSync(path.join(folder,"index.d.ts"),

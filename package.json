@@ -1,6 +1,6 @@
 {
   "name": "tree-shake-css",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Transform your large files into a tree-shakeable form",
   "main": "index.js",
   "bin": {
