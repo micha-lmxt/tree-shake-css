@@ -221,7 +221,7 @@ const writeSpecific = (classes, dest,destsource, jsify,module) => {
 * 
 * ${classes[cl].comment}
 * */
-export const ${jl} = false ? A : "${cclstr}";`:""), enc);   
+export const ${jl} = false ? A : "${ccl}";`:""), enc);   
 
         if (module){
             fs.writeFileSync(path.join(folder,"index.d.ts"),
